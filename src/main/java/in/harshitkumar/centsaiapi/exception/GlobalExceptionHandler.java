@@ -37,6 +37,14 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.CONFLICT);
     }
 
+    @ExceptionHandler(InvalidCredentials.class)
+    public ResponseEntity<Map<String, String>> handleInvalidCredentialsError(InvalidCredentials e){
+        log.error("InvalidCredentials exception handler: Invalid Credentials");
+        Map<String, String> response = new HashMap<>();
+        response.put("message", e.getMessage());
+        return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleException(Exception ex){
         log.error("Generic Exception", ex);

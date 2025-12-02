@@ -1,10 +1,13 @@
 package in.harshitkumar.centsaiapi.service;
 
 import in.harshitkumar.centsaiapi.dto.AuthResponse;
+import in.harshitkumar.centsaiapi.dto.LoginRequest;
 import in.harshitkumar.centsaiapi.dto.RegistrationRequest;
+import in.harshitkumar.centsaiapi.exception.InvalidCredentials;
 import in.harshitkumar.centsaiapi.exception.UserAlreadyExistsError;
 import in.harshitkumar.centsaiapi.models.User;
 import in.harshitkumar.centsaiapi.repository.UserRepository;
+import jakarta.validation.Valid;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -49,5 +52,21 @@ public class AuthService {
                 .id(user.getId())
                 .token(null)
                 .build();
+    }
+
+    public ResponseEntity<AuthResponse> login(@Valid LoginRequest request) {
+        log.info("Auth Service: Logging in user");
+
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(()-> new InvalidCredentials("Invalid email or password"));
+
+        if(!user.getPassword().equals(request.getPassword())){
+            log.error("Auth Service: Invalid credentials");
+            throw new InvalidCredentials("Invalid email or password");
+        }
+
+        AuthResponse authResponse = toResponseDto(user);
+        log.info("Auth Service: User logged in successfully");
+        return ResponseEntity.ok(authResponse);
     }
 }
