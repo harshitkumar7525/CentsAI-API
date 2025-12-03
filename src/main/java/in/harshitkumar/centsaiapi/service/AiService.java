@@ -2,19 +2,32 @@ package in.harshitkumar.centsaiapi.service;
 
 import in.harshitkumar.centsaiapi.dto.AiResponse;
 import in.harshitkumar.centsaiapi.dto.ExpenseDto;
+import in.harshitkumar.centsaiapi.dto.UserPrompt;
+import in.harshitkumar.centsaiapi.exception.AiMicroserviceNotWorking;
+import in.harshitkumar.centsaiapi.exception.UserNotFound;
+import in.harshitkumar.centsaiapi.models.Expenses;
+import in.harshitkumar.centsaiapi.repository.ExpenseRepository;
+import in.harshitkumar.centsaiapi.repository.UserRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 
 
+import java.time.ZoneId;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -22,8 +35,10 @@ import java.util.Map;
 public class AiService {
 
     private final WebClient webClient;
+    private final UserRepository userRepository;
+    private final ExpenseRepository expensesRepository;
 
-    @Value( "${fastapi.url}")
+    @Value("${fastapi.url}")
     private String url;
 
     public Object extractData(String prompt) {
@@ -41,29 +56,64 @@ public class AiService {
 
         } catch (Exception e) {
             log.error("AiService: Error calling FastAPI microservice", e);
-            throw new RuntimeException("FastAPI call failed: " + e.getMessage());
+            throw new AiMicroserviceNotWorking("FastAPI call failed: " + e.getMessage());
         }
     }
 
-    public ResponseEntity<AiResponse> objectToAiResponse(Object obj) {
+    public AiResponse objectToAiResponse(Long userId,Object obj) {
         log.info("AiService: Converting object to AiResponse");
-        try {
-            ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = new ObjectMapper();
 
-            String json = obj.toString();
+        String json = obj.toString();
 
-            List<ExpenseDto> expenses =
-                    mapper.readValue(json, new TypeReference<List<ExpenseDto>>() {});
+        List<ExpenseDto> expenses =
+                mapper.readValue(json, new TypeReference<List<ExpenseDto>>() {
+                });
 
-            AiResponse response = new AiResponse();
-            response.setExpenses(expenses);
-
-            return ResponseEntity.ok(response);
-
-        } catch (Exception ex) {
-            log.error("AiService: Error converting object to AiResponse, error {}",ex.getMessage());
-            return ResponseEntity.badRequest().body(null);
-        }
+        return AiResponse.builder().userId(userId).expenses(expenses).build();
     }
+
+    public AiResponse extractData(Long userId,UserPrompt userPrompt) {
+        log.info("AiController: Extracting data from user prompt");
+        return objectToAiResponse(userId,extractData(userPrompt.getPrompt()));
+    }
+
+    @Transactional
+    public ResponseEntity<AiResponse> saveData(Long userId, UserPrompt userPrompt) {
+        log.info("AiService: Saving data for userId {}", userId);
+
+        AiResponse convertedData = extractData(userId,userPrompt);
+
+        List<ExpenseDto> expenseDtos = convertedData.getExpenses().stream()
+                .filter(dto -> dto.getAmount() != null && dto.getAmount() > 0)
+                .toList();
+
+        if (expenseDtos.isEmpty()) {
+            log.info("AiService: No valid expenses to save for userId {}", userId);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
+
+        var user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFound("User not found with id: " + userId));
+
+        List<Expenses> expenseEntities = expenseDtos.stream()
+                .map(dto -> Expenses.builder()
+                        .amount(dto.getAmount())
+                        .category(dto.getCategory())
+                        .date(Date.from(
+                                dto.getTransactionDate()
+                                        .atStartOfDay(ZoneId.systemDefault())
+                                        .toInstant()
+                        ))
+                        .user(user)
+                        .build())
+                .toList();
+
+        expensesRepository.saveAll(expenseEntities);
+
+        log.info("AiService: Saved {} expenses for userId {}", expenseEntities.size(), userId);
+        return ResponseEntity.status(201).body(convertedData);
+    }
+
 
 }

@@ -45,6 +45,22 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
     }
 
+    @ExceptionHandler(AiMicroserviceNotWorking.class)
+    public ResponseEntity<Map<String, String>> handleAiMicroserviceNotWorkingError(AiMicroserviceNotWorking e){
+        log.error("AiMicroserviceNotWorking exception handler: Ai Microservice not working");
+        Map<String, String> response = new HashMap<>();
+        response.put("message", e.getMessage());
+        return new ResponseEntity<>(response, HttpStatus.SERVICE_UNAVAILABLE);
+    }
+
+    @ExceptionHandler(UserNotFound.class)
+    public ResponseEntity<Map<String, String>> handleUserNotFoundError(UserNotFound e){
+        log.error("UserNotFound exception handler: User not found");
+        Map<String, String> response = new HashMap<>();
+        response.put("message", e.getMessage());
+        return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleException(Exception ex){
         log.error("Generic Exception", ex);

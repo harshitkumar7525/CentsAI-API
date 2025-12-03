@@ -1,18 +1,15 @@
 package in.harshitkumar.centsaiapi.controller;
 
-import in.harshitkumar.centsaiapi.dto.AuthResponse;
-import in.harshitkumar.centsaiapi.dto.LoginRequest;
-import in.harshitkumar.centsaiapi.dto.RegistrationRequest;
+import in.harshitkumar.centsaiapi.dto.*;
+import in.harshitkumar.centsaiapi.service.AiService;
 import in.harshitkumar.centsaiapi.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.tomcat.util.net.openssl.ciphers.Authentication;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
@@ -21,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 @AllArgsConstructor
 public class UserController {
     private final AuthService authService;
+    private final AiService aiService;
 
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> registerUser(@Valid @RequestBody RegistrationRequest registrationRequest) {
@@ -31,7 +29,15 @@ public class UserController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> loginUser(@Valid @RequestBody LoginRequest request){
+    public ResponseEntity<AuthResponse> loginUser(@Valid @RequestBody LoginRequest request) {
         return authService.login(request);
+    }
+
+    @PostMapping("/{userId}/transaction")
+    public ResponseEntity<AiResponse> addTransaction(@PathVariable Long userId,
+                                                     Authentication authentication,
+                                                     @RequestBody UserPrompt prompt) {
+        log.info("UserController: Adding transaction for userId {}", userId);
+        return aiService.saveData(userId, prompt);
     }
 }

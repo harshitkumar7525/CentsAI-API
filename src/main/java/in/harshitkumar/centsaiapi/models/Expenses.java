@@ -20,7 +20,7 @@ public class Expenses {
     private Long id;
 
     @Column
-    private Long amount;
+    private Double amount;
 
     @Column
     private String category;

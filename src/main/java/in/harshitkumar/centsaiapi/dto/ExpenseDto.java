@@ -6,7 +6,7 @@ import java.time.LocalDate;
 
 @Data
 public class ExpenseDto {
-    private double amount;
+    private Double amount;
     private LocalDate transactionDate;
     private String category;
 }
