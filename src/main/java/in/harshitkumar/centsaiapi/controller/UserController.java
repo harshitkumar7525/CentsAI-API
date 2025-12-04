@@ -56,4 +56,11 @@ public class UserController {
                                                @PathVariable Long transactionId) {
         return transactionService.deleteTransaction(userId, transactionId);
     }
+
+    @PatchMapping("/{userId}/transaction/{transactionId}")
+    public ResponseEntity<?> updateTransaction(@PathVariable Long userId,
+                                               @PathVariable Long transactionId,
+                                               @RequestBody TransactionRequest transactionRequest) {
+        return transactionService.updateTransaction(userId, transactionId, transactionRequest);
+    }
 }

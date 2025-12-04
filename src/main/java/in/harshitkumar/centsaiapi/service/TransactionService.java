@@ -85,4 +85,19 @@ public class TransactionService {
     }
 
 
+    public ResponseEntity<?> updateTransaction(Long userId, Long transactionId, TransactionRequest transactionRequest) {
+        log.info("TransactionService: Updating transaction {} for userId {}", transactionId, userId);
+
+        Expenses expense = expenseRepository.findById(transactionId).orElseThrow(() -> new TransactionNotFound("Requested transaction not found: " + transactionId));
+
+        if (!expense.getUser().getId().equals(userId)) {
+            throw new NotAuthorizedError("You are not authorized to update this transaction");
+        }
+
+        expense.setAmount(transactionRequest.getAmount());
+        expense.setCategory(transactionRequest.getCategory());
+        expense.setDate(transactionRequest.getDate());
+        expenseRepository.save(expense);
+        return ResponseEntity.ok("Transaction updated successfully");
+    }
 }
