@@ -33,6 +33,7 @@ public class UserController {
 
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> loginUser(@Valid @RequestBody LoginRequest request) {
+        log.info("User Controller: Logging in user");
         return authService.login(request);
     }
 
@@ -48,6 +49,7 @@ public class UserController {
     public ResponseEntity<TransactionResponse> addTransaction(@PathVariable Long userId,
                                                               Authentication authentication,
                                                               @RequestBody TransactionRequest request) {
+        log.info("UserController: Adding transaction for userId {}", userId);
         return transactionService.addTransaction(userId, request);
     }
 
@@ -55,6 +57,7 @@ public class UserController {
     public ResponseEntity<?> deleteTransaction(@PathVariable Long userId,
                                                Authentication authentication,
                                                @PathVariable Long transactionId) {
+        log.info("UserController: Deleting transaction for userId {}", userId);
         return transactionService.deleteTransaction(userId, transactionId);
     }
 
@@ -62,11 +65,13 @@ public class UserController {
     public ResponseEntity<?> updateTransaction(@PathVariable Long userId,
                                                @PathVariable Long transactionId,
                                                @RequestBody TransactionRequest transactionRequest) {
+        log.info("UserController: Updating transaction for userId {}", userId);
         return transactionService.updateTransaction(userId, transactionId, transactionRequest);
     }
 
     @GetMapping("/{userId}/transactions")
-    public ResponseEntity<TransactionResponse> getTransactions(@PathVariable Long userId) {
+    public ResponseEntity<UserTransactions> getTransactions(@PathVariable Long userId) {
+        log.info("UserController: Retrieving transactions for userId {}", userId);
         return ResponseEntity.status(HttpStatus.OK).body(transactionService.retrieveTransactions(userId));
     }
 }

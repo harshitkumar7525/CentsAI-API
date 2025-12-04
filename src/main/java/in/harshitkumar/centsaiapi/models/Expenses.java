@@ -1,10 +1,7 @@
 package in.harshitkumar.centsaiapi.models;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.Date;
 
@@ -14,6 +11,7 @@ import java.util.Date;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@ToString
 public class Expenses {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

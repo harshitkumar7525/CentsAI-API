@@ -3,6 +3,7 @@ package in.harshitkumar.centsaiapi.service;
 import in.harshitkumar.centsaiapi.dto.ExpenseDto;
 import in.harshitkumar.centsaiapi.dto.TransactionRequest;
 import in.harshitkumar.centsaiapi.dto.TransactionResponse;
+import in.harshitkumar.centsaiapi.dto.UserTransactions;
 import in.harshitkumar.centsaiapi.exception.NotAuthorizedError;
 import in.harshitkumar.centsaiapi.exception.TransactionNotFound;
 import in.harshitkumar.centsaiapi.exception.UserNotFound;
@@ -75,13 +76,18 @@ public class TransactionService {
         log.info("TransactionService: Deleting transaction {} for userId {}", transactionId, userId);
 
         Expenses expense = expenseRepository.findById(transactionId)
-                .orElseThrow(() -> new TransactionNotFound("Requested transaction not found: " + transactionId));
+                .orElseThrow(() -> {
+                    log.error("TransactionService: Transaction not found for id {}", transactionId);
+                    return new TransactionNotFound("Requested transaction not found: " + transactionId);
+                });
 
         if (!expense.getUser().getId().equals(userId)) {
+            log.error("TransactionService: User {} is not authorized to delete transaction {}", userId, transactionId);
             throw new NotAuthorizedError("You are not authorized to delete this transaction");
         }
 
         expenseRepository.delete(expense);
+        log.info("TransactionService: Deleted transaction {} for userId {}", transactionId, userId);
         return ResponseEntity.ok("Transaction deleted successfully");
     }
 
@@ -89,9 +95,13 @@ public class TransactionService {
     public ResponseEntity<?> updateTransaction(Long userId, Long transactionId, TransactionRequest transactionRequest) {
         log.info("TransactionService: Updating transaction {} for userId {}", transactionId, userId);
 
-        Expenses expense = expenseRepository.findById(transactionId).orElseThrow(() -> new TransactionNotFound("Requested transaction not found: " + transactionId));
+        Expenses expense = expenseRepository.findById(transactionId).orElseThrow(() -> {
+            log.error("TransactionService: Transaction not found for id {}", transactionId);
+            return new TransactionNotFound("Requested transaction not found: " + transactionId);
+        });
 
         if (!expense.getUser().getId().equals(userId)) {
+            log.error("TransactionService: User {} is not authorized to update transaction {}", userId, transactionId);
             throw new NotAuthorizedError("You are not authorized to update this transaction");
         }
 
@@ -99,15 +109,21 @@ public class TransactionService {
         expense.setCategory(transactionRequest.getCategory());
         expense.setDate(transactionRequest.getDate());
         expenseRepository.save(expense);
+        log.info("TransactionService: Updated transaction {} for userId {}", transactionId, userId);
         return ResponseEntity.ok("Transaction updated successfully");
     }
 
-    public TransactionResponse retrieveTransactions(Long userId) {
+    public UserTransactions retrieveTransactions(Long userId) {
+        log.info("TransactionService: Retrieving transactions for userId {}", userId);
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFound("User not found with id: " + userId));
+                .orElseThrow(() -> {
+                    log.error("TransactionService: User not found for id {}", userId);
+                    return new UserNotFound("User not found with id: " + userId);
+                });
 
         List<Expenses> expenses = user.getExpenses();
+        log.info("TransactionService: Retrieved {} transactions for userId {}", expenses.size(), userId);
 
-        return TransactionResponse.builder().userId(userId).userExpenses(expenses).build();
+        return UserTransactions.builder().userId(userId).allExpenses(expenses).build();
     }
 }
