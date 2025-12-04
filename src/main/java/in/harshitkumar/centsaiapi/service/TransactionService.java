@@ -20,6 +20,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 
 @Service
 @AllArgsConstructor
@@ -99,5 +100,14 @@ public class TransactionService {
         expense.setDate(transactionRequest.getDate());
         expenseRepository.save(expense);
         return ResponseEntity.ok("Transaction updated successfully");
+    }
+
+    public TransactionResponse retrieveTransactions(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFound("User not found with id: " + userId));
+
+        List<Expenses> expenses = user.getExpenses();
+
+        return TransactionResponse.builder().userId(userId).userExpenses(expenses).build();
     }
 }

@@ -8,7 +8,8 @@ import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.tomcat.util.net.openssl.ciphers.Authentication;
+import org.springframework.security.core.Authentication;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -62,5 +63,10 @@ public class UserController {
                                                @PathVariable Long transactionId,
                                                @RequestBody TransactionRequest transactionRequest) {
         return transactionService.updateTransaction(userId, transactionId, transactionRequest);
+    }
+
+    @GetMapping("/{userId}/transactions")
+    public ResponseEntity<TransactionResponse> getTransactions(@PathVariable Long userId) {
+        return ResponseEntity.status(HttpStatus.OK).body(transactionService.retrieveTransactions(userId));
     }
 }
