@@ -3,6 +3,7 @@ package in.harshitkumar.centsaiapi.controller;
 import in.harshitkumar.centsaiapi.dto.*;
 import in.harshitkumar.centsaiapi.service.AiService;
 import in.harshitkumar.centsaiapi.service.AuthService;
+import in.harshitkumar.centsaiapi.service.TransactionService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
     private final AuthService authService;
     private final AiService aiService;
+    private final TransactionService transactionService;
 
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> registerUser(@Valid @RequestBody RegistrationRequest registrationRequest) {
@@ -33,11 +35,18 @@ public class UserController {
         return authService.login(request);
     }
 
-    @PostMapping("/{userId}/transaction")
+    @PostMapping("/ai/{userId}/transaction")
     public ResponseEntity<AiResponse> addTransaction(@PathVariable Long userId,
                                                      Authentication authentication,
                                                      @RequestBody UserPrompt prompt) {
         log.info("UserController: Adding transaction for userId {}", userId);
         return aiService.saveData(userId, prompt);
+    }
+
+    @PostMapping("/{userId}/transaction")
+    public ResponseEntity<TransactionResponse> addTransaction(@PathVariable Long userId,
+                                                              Authentication authentication,
+                                                              @RequestBody TransactionRequest request) {
+        return transactionService.addTransaction(userId, request);
     }
 }

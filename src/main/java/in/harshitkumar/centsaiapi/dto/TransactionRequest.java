@@ -5,14 +5,14 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDate;
+import java.util.Date;
 
-@Data
 @Builder
-@AllArgsConstructor
+@Data
 @NoArgsConstructor
-public class ExpenseDto {
+@AllArgsConstructor
+public class TransactionRequest {
     private Double amount;
-    private LocalDate transactionDate;
     private String category;
+    private Date date;
 }
