@@ -3,6 +3,8 @@ package in.harshitkumar.centsaiapi.service;
 import in.harshitkumar.centsaiapi.dto.ExpenseDto;
 import in.harshitkumar.centsaiapi.dto.TransactionRequest;
 import in.harshitkumar.centsaiapi.dto.TransactionResponse;
+import in.harshitkumar.centsaiapi.exception.NotAuthorizedError;
+import in.harshitkumar.centsaiapi.exception.TransactionNotFound;
 import in.harshitkumar.centsaiapi.exception.UserNotFound;
 import in.harshitkumar.centsaiapi.models.Expenses;
 import in.harshitkumar.centsaiapi.models.User;
@@ -67,4 +69,20 @@ public class TransactionService {
 
         return ResponseEntity.ok(response);
     }
+
+    public ResponseEntity<?> deleteTransaction(Long userId, Long transactionId) {
+        log.info("TransactionService: Deleting transaction {} for userId {}", transactionId, userId);
+
+        Expenses expense = expenseRepository.findById(transactionId)
+                .orElseThrow(() -> new TransactionNotFound("Requested transaction not found: " + transactionId));
+
+        if (!expense.getUser().getId().equals(userId)) {
+            throw new NotAuthorizedError("You are not authorized to delete this transaction");
+        }
+
+        expenseRepository.delete(expense);
+        return ResponseEntity.ok("Transaction deleted successfully");
+    }
+
+
 }

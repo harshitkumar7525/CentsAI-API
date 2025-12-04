@@ -61,6 +61,22 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
     }
 
+    @ExceptionHandler(TransactionNotFound.class)
+    public ResponseEntity<Map<String, String>> handleTransactionNotFoundError(TransactionNotFound e){
+        log.error("TransactionNotFound exception handler: Transaction not found");
+        Map<String, String> response = new HashMap<>();
+        response.put("message", e.getMessage());
+        return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(NotAuthorizedError.class)
+    public ResponseEntity<Map<String, String>> handleNotAuthorizedError(NotAuthorizedError e){
+        log.error("NotAuthorizedError exception handler: Not authorized");
+        Map<String, String> response = new HashMap<>();
+        response.put("message", e.getMessage());
+        return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleException(Exception ex){
         log.error("Generic Exception", ex);

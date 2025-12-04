@@ -49,4 +49,11 @@ public class UserController {
                                                               @RequestBody TransactionRequest request) {
         return transactionService.addTransaction(userId, request);
     }
+
+    @DeleteMapping("/{userId}/transaction/{transactionId}")
+    public ResponseEntity<?> deleteTransaction(@PathVariable Long userId,
+                                               Authentication authentication,
+                                               @PathVariable Long transactionId) {
+        return transactionService.deleteTransaction(userId, transactionId);
+    }
 }
