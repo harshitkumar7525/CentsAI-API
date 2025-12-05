@@ -5,7 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.Date;
+import java.time.LocalDate;
 
 @Builder
 @Data
@@ -14,5 +14,5 @@ import java.util.Date;
 public class TransactionRequest {
     private Double amount;
     private String category;
-    private Date date;
+    private LocalDate date;
 }

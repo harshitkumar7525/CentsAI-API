@@ -10,5 +10,5 @@ import java.util.List;
 @Builder
 public class UserTransactions {
     private Long userId;
-    private List<Expenses> allExpenses;
+    private List<ExpenseDto> allExpenses;
 }

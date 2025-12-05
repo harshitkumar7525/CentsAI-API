@@ -52,7 +52,7 @@ public class AuthService {
         return AuthResponse.builder()
                 .username(user.getUsername())
                 .id(user.getId())
-                .token(jwtUtil.generateJwtToken(user.getId()))
+                .token(jwtUtil.generateJwtToken(user))
                 .build();
     }
 

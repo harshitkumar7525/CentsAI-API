@@ -20,9 +20,6 @@ import reactor.core.publisher.Mono;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 
-
-import java.time.ZoneId;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -57,7 +54,7 @@ public class AiService {
         }
     }
 
-    public AiResponse objectToAiResponse(Long userId,Object obj) {
+    public AiResponse objectToAiResponse(Long userId, Object obj) {
         log.info("AiService: Converting object to AiResponse");
         ObjectMapper mapper = new ObjectMapper();
 
@@ -70,16 +67,16 @@ public class AiService {
         return AiResponse.builder().userId(userId).expenses(expenses).build();
     }
 
-    public AiResponse extractData(Long userId,UserPrompt userPrompt) {
+    public AiResponse extractData(Long userId, UserPrompt userPrompt) {
         log.info("AiController: Extracting data from user prompt");
-        return objectToAiResponse(userId,extractData(userPrompt.getPrompt()));
+        return objectToAiResponse(userId, extractData(userPrompt.getPrompt()));
     }
 
     @Transactional
     public ResponseEntity<AiResponse> saveData(Long userId, UserPrompt userPrompt) {
         log.info("AiService: Saving data for userId {}", userId);
 
-        AiResponse convertedData = extractData(userId,userPrompt);
+        AiResponse convertedData = extractData(userId, userPrompt);
 
         List<ExpenseDto> expenseDtos = convertedData.getExpenses().stream()
                 .filter(dto -> dto.getAmount() != null && dto.getAmount() > 0)
@@ -97,11 +94,7 @@ public class AiService {
                 .map(dto -> Expenses.builder()
                         .amount(dto.getAmount())
                         .category(dto.getCategory())
-                        .date(Date.from(
-                                dto.getTransactionDate()
-                                        .atStartOfDay(ZoneId.systemDefault())
-                                        .toInstant()
-                        ))
+                        .date(dto.getTransactionDate())
                         .user(user)
                         .build())
                 .toList();

@@ -3,6 +3,7 @@ package in.harshitkumar.centsaiapi.models;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDate;
 import java.util.Date;
 
 @Data
@@ -24,7 +25,7 @@ public class Expenses {
     private String category;
 
     @Column
-    private Date date;
+    private LocalDate date;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")

@@ -41,6 +41,11 @@ public class UserController {
     public ResponseEntity<AiResponse> addTransaction(@PathVariable Long userId,
                                                      Authentication authentication,
                                                      @RequestBody UserPrompt prompt) {
+        Long loggedInUserId = extractUserId(authentication);
+        if (!loggedInUserId.equals(userId)) {
+            log.error("UserController: User {} is not authorized to add transaction for userId {}", loggedInUserId, userId);
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
         log.info("UserController: Adding transaction for userId {}", userId);
         return aiService.saveData(userId, prompt);
     }
@@ -49,6 +54,11 @@ public class UserController {
     public ResponseEntity<TransactionResponse> addTransaction(@PathVariable Long userId,
                                                               Authentication authentication,
                                                               @RequestBody TransactionRequest request) {
+        Long loggedInUserId = extractUserId(authentication);
+        if (!loggedInUserId.equals(userId)) {
+            log.error("UserController: User {} is not authorized to add transaction for userId {}", loggedInUserId, userId);
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
         log.info("UserController: Adding transaction for userId {}", userId);
         return transactionService.addTransaction(userId, request);
     }
@@ -57,6 +67,11 @@ public class UserController {
     public ResponseEntity<?> deleteTransaction(@PathVariable Long userId,
                                                Authentication authentication,
                                                @PathVariable Long transactionId) {
+        Long loggedInUserId = extractUserId(authentication);
+        if (!loggedInUserId.equals(userId)) {
+            log.error("UserController: User {} is not authorized to delete transaction for userId {}", loggedInUserId, userId);
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
         log.info("UserController: Deleting transaction for userId {}", userId);
         return transactionService.deleteTransaction(userId, transactionId);
     }
@@ -64,14 +79,38 @@ public class UserController {
     @PatchMapping("/{userId}/transaction/{transactionId}")
     public ResponseEntity<?> updateTransaction(@PathVariable Long userId,
                                                @PathVariable Long transactionId,
+                                               Authentication authentication,
                                                @RequestBody TransactionRequest transactionRequest) {
+        Long loggedInUserId = extractUserId(authentication);
+        if (!loggedInUserId.equals(userId)) {
+            log.error("UserController: User {} is not authorized to update transaction for userId {}", loggedInUserId, userId);
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
         log.info("UserController: Updating transaction for userId {}", userId);
         return transactionService.updateTransaction(userId, transactionId, transactionRequest);
     }
 
     @GetMapping("/{userId}/transactions")
-    public ResponseEntity<UserTransactions> getTransactions(@PathVariable Long userId) {
+    public ResponseEntity<UserTransactions> getTransactions(@PathVariable Long userId,
+                                                            Authentication authentication) {
+        Long loggedInUserId = extractUserId(authentication);
+        if (!loggedInUserId.equals(userId)) {
+            log.error("UserController: User {} is not authorized to retrieve transactions for userId {}", loggedInUserId, userId);
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
         log.info("UserController: Retrieving transactions for userId {}", userId);
         return ResponseEntity.status(HttpStatus.OK).body(transactionService.retrieveTransactions(userId));
+    }
+
+    private Long extractUserId(Authentication authentication) {
+        if (authentication == null || authentication.getPrincipal() == null) {
+            log.error("Authentication is missing");
+            throw new IllegalStateException("Authentication is missing");
+        }
+        Object principal = authentication.getPrincipal();
+        if (principal instanceof Long) {
+            return (Long) principal;
+        }
+        return Long.parseLong(principal.toString());
     }
 }

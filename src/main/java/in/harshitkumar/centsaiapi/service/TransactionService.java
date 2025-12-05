@@ -18,10 +18,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @AllArgsConstructor
@@ -41,7 +40,7 @@ public class TransactionService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFound("User not found with id: " + userId));
 
-        Date expenseDate = (request.getDate() != null) ? request.getDate() : new Date();
+        LocalDate expenseDate = (request.getDate() != null) ? request.getDate() : LocalDate.now();
 
         Expenses expense = Expenses.builder()
                 .user(user)
@@ -51,12 +50,9 @@ public class TransactionService {
                 .build();
 
         expenseRepository.save(expense);
-        log.info("TransactionService: Saved expense {} for userId {}", expense, userId);
+        log.info("TransactionService: Saved expense with expenseId {} for userId {}", expense.getId(), userId);
 
-        LocalDate txDate = expense.getDate()
-                .toInstant()
-                .atZone(ZoneId.systemDefault())
-                .toLocalDate();
+        LocalDate txDate = expense.getDate();
 
         ExpenseDto dto = ExpenseDto.builder()
                 .amount(expense.getAmount())
@@ -88,7 +84,7 @@ public class TransactionService {
 
         expenseRepository.delete(expense);
         log.info("TransactionService: Deleted transaction {} for userId {}", transactionId, userId);
-        return ResponseEntity.ok("Transaction deleted successfully");
+        return ResponseEntity.status(HttpStatus.OK).body(Map.of("message", "Transaction deleted successfully"));
     }
 
 
@@ -110,7 +106,7 @@ public class TransactionService {
         expense.setDate(transactionRequest.getDate());
         expenseRepository.save(expense);
         log.info("TransactionService: Updated transaction {} for userId {}", transactionId, userId);
-        return ResponseEntity.ok("Transaction updated successfully");
+        return ResponseEntity.status(HttpStatus.OK).body(Map.of("message", "Transaction updated successfully"));
     }
 
     public UserTransactions retrieveTransactions(Long userId) {
@@ -122,8 +118,17 @@ public class TransactionService {
                 });
 
         List<Expenses> expenses = user.getExpenses();
+        List<ExpenseDto> expenseDtos = expenses.stream()
+                .map(expense -> ExpenseDto.builder()
+                        .transactionDate(expense.getDate())
+                        .amount(expense.getAmount())
+                        .category(expense.getCategory())
+                        .build()
+                )
+                .toList();
+
         log.info("TransactionService: Retrieved {} transactions for userId {}", expenses.size(), userId);
 
-        return UserTransactions.builder().userId(userId).allExpenses(expenses).build();
+        return UserTransactions.builder().userId(userId).allExpenses(expenseDtos).build();
     }
 }
