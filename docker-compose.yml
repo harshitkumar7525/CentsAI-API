@@ -1,0 +1,20 @@
+version: "3.9"
+
+services:
+  backend:
+    build: .
+    container_name: centsai_backend
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    environment:
+      SPRING_APPLICATION_NAME: ${SPRING_APPLICATION_NAME}
+      DB_URL: ${DB_URL}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION: ${JWT_EXPIRATION}
+      FASTAPI_URL: ${FASTAPI_URL}
+      FRONTEND_URL: ${FRONTEND_URL}
+      SERVER_PORT: ${SERVER_PORT}

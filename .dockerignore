@@ -1,0 +1,14 @@
+.gradle
+build
+.gradle-cache
+out
+.gradle
+**/*.log
+.git
+.gitignore
+.gradle/
+.idea/
+.vscode/
+local.properties
+*.iml
+.env
