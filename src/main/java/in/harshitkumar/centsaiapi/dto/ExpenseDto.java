@@ -12,6 +12,7 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ExpenseDto {
+    private Long id;
     private Double amount;
     private LocalDate transactionDate;
     private String category;

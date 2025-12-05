@@ -58,6 +58,7 @@ public class TransactionService {
                 .amount(expense.getAmount())
                 .category(expense.getCategory())
                 .transactionDate(txDate)
+                .id(expense.getId())
                 .build();
 
         TransactionResponse response = TransactionResponse.builder()
@@ -123,6 +124,7 @@ public class TransactionService {
                         .transactionDate(expense.getDate())
                         .amount(expense.getAmount())
                         .category(expense.getCategory())
+                        .id(expense.getId())
                         .build()
                 )
                 .toList();
