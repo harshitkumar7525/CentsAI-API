@@ -7,20 +7,22 @@ import in.harshitkumar.centsaiapi.exception.InvalidCredentials;
 import in.harshitkumar.centsaiapi.exception.UserAlreadyExistsError;
 import in.harshitkumar.centsaiapi.models.User;
 import in.harshitkumar.centsaiapi.repository.UserRepository;
+import in.harshitkumar.centsaiapi.utils.JwtUtil;
 import jakarta.validation.Valid;
-import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
 @Slf4j
 @RequiredArgsConstructor
-@Data
 public class AuthService {
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtUtil jwtUtil;
 
     public ResponseEntity<AuthResponse> registerUser(RegistrationRequest registrationRequest) {
         log.info("Auth Service: Registering user");
@@ -41,7 +43,7 @@ public class AuthService {
                 .builder()
                 .username(request.getUsername())
                 .email(request.getEmail())
-                .password(request.getPassword())
+                .password(passwordEncoder.encode(request.getPassword()))
                 .build();
     }
 
@@ -50,7 +52,7 @@ public class AuthService {
         return AuthResponse.builder()
                 .username(user.getUsername())
                 .id(user.getId())
-                .token(null)
+                .token(jwtUtil.generateJwtToken(user.getId()))
                 .build();
     }
 
@@ -60,7 +62,7 @@ public class AuthService {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(()-> new InvalidCredentials("Invalid email or password"));
 
-        if(!user.getPassword().equals(request.getPassword())){
+        if(!passwordEncoder.matches(request.getPassword(), user.getPassword())){
             log.error("Auth Service: Invalid credentials");
             throw new InvalidCredentials("Invalid email or password");
         }
