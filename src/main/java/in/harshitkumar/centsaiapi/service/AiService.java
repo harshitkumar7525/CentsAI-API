@@ -67,6 +67,12 @@ public class AiService {
         return AiResponse.builder().userId(userId).expenses(expenses).build();
     }
 
+    private String capitalize(String str) {
+        if (str == null || str.isEmpty()) return str;
+        return str.substring(0, 1).toUpperCase() + str.substring(1).toLowerCase();
+    }
+
+
     public AiResponse extractData(Long userId, UserPrompt userPrompt) {
         log.info("AiController: Extracting data from user prompt");
         return objectToAiResponse(userId, extractData(userPrompt.getPrompt()));
@@ -93,7 +99,7 @@ public class AiService {
         List<Expenses> expenseEntities = expenseDtos.stream()
                 .map(dto -> Expenses.builder()
                         .amount(dto.getAmount())
-                        .category(dto.getCategory())
+                        .category(capitalize(dto.getCategory()))
                         .date(dto.getTransactionDate())
                         .user(user)
                         .build())
