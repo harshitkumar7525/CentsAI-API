@@ -17,11 +17,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
+import reactor.util.retry.Retry;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 
 import java.util.List;
 import java.util.Map;
+import java.time.Duration;
 
 @Service
 @Slf4j
@@ -44,13 +46,17 @@ public class AiService {
                     .uri(url)
                     .bodyValue(Map.of("prompt", prompt))
                     .retrieve()
-                    .bodyToMono(Object.class);
+                    .bodyToMono(Object.class)
+                    .retryWhen(
+                            Retry.backoff(1, Duration.ofMillis(500)) // duration cannot be resolved error
+                    )
+                    .timeout(Duration.ofSeconds(20));
 
             return response.block();
 
         } catch (Exception e) {
             log.error("AiService: Error calling FastAPI microservice", e);
-            throw new AiMicroserviceNotWorking("FastAPI call failed: " + e.getMessage());
+            throw new AiMicroserviceNotWorking("AI service is not responding, please try again");
         }
     }
 
@@ -60,18 +66,17 @@ public class AiService {
 
         String json = obj.toString();
 
-        List<ExpenseDto> expenses =
-                mapper.readValue(json, new TypeReference<List<ExpenseDto>>() {
-                });
+        List<ExpenseDto> expenses = mapper.readValue(json, new TypeReference<List<ExpenseDto>>() {
+        });
 
         return AiResponse.builder().userId(userId).expenses(expenses).build();
     }
 
     private String capitalize(String str) {
-        if (str == null || str.isEmpty()) return str;
+        if (str == null || str.isEmpty())
+            return str;
         return str.substring(0, 1).toUpperCase() + str.substring(1).toLowerCase();
     }
-
 
     public AiResponse extractData(Long userId, UserPrompt userPrompt) {
         log.info("AiController: Extracting data from user prompt");
@@ -110,6 +115,5 @@ public class AiService {
         log.info("AiService: Saved {} expenses for userId {}", expenseEntities.size(), userId);
         return ResponseEntity.status(201).body(convertedData);
     }
-
 
 }
