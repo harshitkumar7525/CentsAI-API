@@ -21,9 +21,9 @@ import reactor.util.retry.Retry;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
-import java.time.Duration;
 
 @Service
 @Slf4j
@@ -34,12 +34,12 @@ public class AiService {
     private final UserRepository userRepository;
     private final ExpenseRepository expensesRepository;
 
-    @Value("${fastapi.url}")
+    @Value("${microservice.uri}")
     private String url;
 
     public Object extractData(String prompt) {
 
-        log.info("AiService: Sending prompt to FastAPI: {}", prompt);
+        log.info("AiService: Sending prompt to ExpressAPI: {}", prompt);
 
         try {
             Mono<Object> response = webClient.post()
@@ -62,14 +62,19 @@ public class AiService {
 
     public AiResponse objectToAiResponse(Long userId, Object obj) {
         log.info("AiService: Converting object to AiResponse");
+
         ObjectMapper mapper = new ObjectMapper();
 
-        String json = obj.toString();
+        List<ExpenseDto> expenses = mapper.convertValue(
+                obj,
+                new TypeReference<List<ExpenseDto>>() {
+                }
+        );
 
-        List<ExpenseDto> expenses = mapper.readValue(json, new TypeReference<List<ExpenseDto>>() {
-        });
-
-        return AiResponse.builder().userId(userId).expenses(expenses).build();
+        return AiResponse.builder()
+                .userId(userId)
+                .expenses(expenses)
+                .build();
     }
 
     private String capitalize(String str) {
