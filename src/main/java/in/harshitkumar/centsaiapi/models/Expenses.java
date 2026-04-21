@@ -1,33 +1,27 @@
 package in.harshitkumar.centsaiapi.models;
 
-import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDate;
-import java.util.Date;
 
 @Data
-@Entity
-@Table(name = "expenses", indexes = {@Index(columnList = "user_id")})
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 @ToString
+@Document(collection = "expenses")
 public class Expenses {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
 
-    @Column
+    @Id
+    private String id;   // Mongo uses String (ObjectId)
+
     private Double amount;
 
-    @Column
     private String category;
 
-    @Column
     private LocalDate date;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    private User user;
+    private String userId; // store reference manually
 }
