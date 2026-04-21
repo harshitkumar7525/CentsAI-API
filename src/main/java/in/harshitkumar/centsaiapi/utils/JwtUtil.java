@@ -41,7 +41,7 @@ public class JwtUtil {
         return Keys.hmacShaKeyFor(jwtSecret.getBytes());
     }
 
-    public Long getUserIdFromJwtToken(String token) {
+    public String getUserIdFromJwtToken(String token) {
         log.info("JwtUtil: Extracting userId from JWT token");
         Claims claims = Jwts.parserBuilder()
                 .setSigningKey(getSigningKey())
@@ -49,7 +49,7 @@ public class JwtUtil {
                 .parseClaimsJws(token)
                 .getBody();
 
-        return Long.parseLong(claims.getSubject());
+        return String.valueOf(claims.getSubject()); // I have changed this
     }
 
     public boolean validateJwtToken(String token) {

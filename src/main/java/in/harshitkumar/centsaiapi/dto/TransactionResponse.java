@@ -12,6 +12,6 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TransactionResponse {
-    private Long userId;
+    private String userId;
     private List<ExpenseDto> expenses;
 }

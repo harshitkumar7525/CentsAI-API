@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 @Builder
 public class AuthResponse {
     @JsonProperty("user_id")
-    private Long id;
+    private String id;
     private String token;
     private String username;
 }

@@ -8,7 +8,6 @@ import in.harshitkumar.centsaiapi.exception.NotAuthorizedError;
 import in.harshitkumar.centsaiapi.exception.TransactionNotFound;
 import in.harshitkumar.centsaiapi.exception.UserNotFound;
 import in.harshitkumar.centsaiapi.models.Expenses;
-import in.harshitkumar.centsaiapi.models.User;
 import in.harshitkumar.centsaiapi.repository.ExpenseRepository;
 import in.harshitkumar.centsaiapi.repository.UserRepository;
 import lombok.AllArgsConstructor;
@@ -30,34 +29,33 @@ public class TransactionService {
     private final ExpenseRepository expenseRepository;
     private final UserRepository userRepository;
 
-    public ResponseEntity<TransactionResponse> addTransaction(Long userId, TransactionRequest request) {
+    public ResponseEntity<TransactionResponse> addTransaction(String userId, TransactionRequest request) {
         log.info("TransactionService: Saving data for userId {}", userId);
 
         if (request.getAmount() == null || request.getAmount() <= 0) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
 
-        User user = userRepository.findById(userId)
+        userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFound("User not found with id: " + userId));
 
         LocalDate expenseDate = (request.getDate() != null) ? request.getDate() : LocalDate.now();
 
         Expenses expense = Expenses.builder()
-                .user(user)
+                .userId(userId)
                 .date(expenseDate)
                 .amount(request.getAmount())
                 .category(request.getCategory())
                 .build();
 
         expenseRepository.save(expense);
-        log.info("TransactionService: Saved expense with expenseId {} for userId {}", expense.getId(), userId);
 
-        LocalDate txDate = expense.getDate();
+        log.info("TransactionService: Saved expense with expenseId {} for userId {}", expense.getId(), userId);
 
         ExpenseDto dto = ExpenseDto.builder()
                 .amount(expense.getAmount())
                 .category(expense.getCategory())
-                .transactionDate(txDate)
+                .transactionDate(expense.getDate())
                 .id(expense.getId())
                 .build();
 
@@ -69,7 +67,7 @@ public class TransactionService {
         return ResponseEntity.ok(response);
     }
 
-    public ResponseEntity<?> deleteTransaction(Long userId, Long transactionId) {
+    public ResponseEntity<?> deleteTransaction(String userId, String transactionId) {
         log.info("TransactionService: Deleting transaction {} for userId {}", transactionId, userId);
 
         Expenses expense = expenseRepository.findById(transactionId)
@@ -78,47 +76,62 @@ public class TransactionService {
                     return new TransactionNotFound("Requested transaction not found: " + transactionId);
                 });
 
-        if (!expense.getUser().getId().equals(userId)) {
+        if (!expense.getUserId().equals(userId)) {
             log.error("TransactionService: User {} is not authorized to delete transaction {}", userId, transactionId);
             throw new NotAuthorizedError("You are not authorized to delete this transaction");
         }
 
         expenseRepository.delete(expense);
+
         log.info("TransactionService: Deleted transaction {} for userId {}", transactionId, userId);
-        return ResponseEntity.status(HttpStatus.OK).body(Map.of("message", "Transaction deleted successfully"));
+
+        return ResponseEntity.ok(Map.of("message", "Transaction deleted successfully"));
     }
 
-
-    public ResponseEntity<?> updateTransaction(Long userId, Long transactionId, TransactionRequest transactionRequest) {
+    public ResponseEntity<?> updateTransaction(String userId, String transactionId, TransactionRequest request) {
         log.info("TransactionService: Updating transaction {} for userId {}", transactionId, userId);
 
-        Expenses expense = expenseRepository.findById(transactionId).orElseThrow(() -> {
-            log.error("TransactionService: Transaction not found for id {}", transactionId);
-            return new TransactionNotFound("Requested transaction not found: " + transactionId);
-        });
+        Expenses expense = expenseRepository.findById(transactionId)
+                .orElseThrow(() -> {
+                    log.error("TransactionService: Transaction not found for id {}", transactionId);
+                    return new TransactionNotFound("Requested transaction not found: " + transactionId);
+                });
 
-        if (!expense.getUser().getId().equals(userId)) {
+        if (!expense.getUserId().equals(userId)) {
             log.error("TransactionService: User {} is not authorized to update transaction {}", userId, transactionId);
             throw new NotAuthorizedError("You are not authorized to update this transaction");
         }
 
-        expense.setAmount(transactionRequest.getAmount());
-        expense.setCategory(transactionRequest.getCategory());
-        expense.setDate(transactionRequest.getDate());
+        if (request.getAmount() != null) {
+            expense.setAmount(request.getAmount());
+        }
+
+        if (request.getCategory() != null) {
+            expense.setCategory(request.getCategory());
+        }
+
+        if (request.getDate() != null) {
+            expense.setDate(request.getDate());
+        }
+
         expenseRepository.save(expense);
+
         log.info("TransactionService: Updated transaction {} for userId {}", transactionId, userId);
-        return ResponseEntity.status(HttpStatus.OK).body(Map.of("message", "Transaction updated successfully"));
+
+        return ResponseEntity.ok(Map.of("message", "Transaction updated successfully"));
     }
 
-    public UserTransactions retrieveTransactions(Long userId) {
+    public UserTransactions retrieveTransactions(String userId) {
         log.info("TransactionService: Retrieving transactions for userId {}", userId);
-        User user = userRepository.findById(userId)
+
+        userRepository.findById(userId)
                 .orElseThrow(() -> {
                     log.error("TransactionService: User not found for id {}", userId);
                     return new UserNotFound("User not found with id: " + userId);
                 });
 
-        List<Expenses> expenses = user.getExpenses();
+        List<Expenses> expenses = expenseRepository.findByUserId(userId);
+
         List<ExpenseDto> expenseDtos = expenses.stream()
                 .map(expense -> ExpenseDto.builder()
                         .transactionDate(expense.getDate())
@@ -131,6 +144,9 @@ public class TransactionService {
 
         log.info("TransactionService: Retrieved {} transactions for userId {}", expenses.size(), userId);
 
-        return UserTransactions.builder().userId(userId).allExpenses(expenseDtos).build();
+        return UserTransactions.builder()
+                .userId(userId)
+                .allExpenses(expenseDtos)
+                .build();
     }
 }
