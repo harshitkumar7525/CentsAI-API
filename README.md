@@ -1,107 +1,74 @@
 # CentsAI API
 
-A Spring Boot REST API for managing personal finances with AI-powered transaction tracking. This application allows users to register, authenticate, and manage their expenses with intelligent categorization and analysis.
+CentsAI API is a Spring Boot REST API for personal finance tracking with JWT authentication and AI-assisted transaction capture. The current codebase uses MongoDB for persistence and stores users and expenses as Mongo collections.
 
-## 📋 Table of Contents
+## Overview
 
-- [Overview](#overview)
-- [Tech Stack](#tech-stack)
-- [Getting Started](#getting-started)
-- [API Endpoints](#api-endpoints)
-  - [Authentication](#authentication)
-  - [Transactions](#transactions)
-  - [AI Features](#ai-features)
-- [Request/Response Examples](#requestresponse-examples)
-- [Error Handling](#error-handling)
-- [Security](#security)
-- [Configuration](#configuration)
+The API provides:
 
-## 🎯 Overview
+- User registration and login with JWT tokens
+- Manual expense creation and management
+- AI-assisted expense parsing from natural language prompts
+- Per-user access control on all protected endpoints
+- MongoDB persistence for users and expenses
 
-CentsAI API is a comprehensive financial management backend that provides:
+## Tech Stack
 
-- **User Authentication**: Secure registration and login with JWT tokens
-- **Transaction Management**: Create, read, update, and delete expense transactions
-- **AI-Powered Analysis**: Natural language processing for expense categorization
-- **User Authorization**: Role-based access control for transaction operations
-- **PostgreSQL Database**: Persistent data storage with JPA/Hibernate ORM
+- Spring Boot 4.0.0
+- Java 21
+- Gradle
+- MongoDB
+- Spring Security
+- Spring Data MongoDB
+- JWT (JJWT)
+- Spring WebMVC and WebFlux
+- Jakarta Validation
+- Lombok
 
-## 🛠 Tech Stack
-
-- **Framework**: Spring Boot 4.0.0
-- **Language**: Java 21
-- **Build Tool**: Gradle
-- **Database**: PostgreSQL (Neon)
-- **Authentication**: JWT (JSON Web Tokens)
-- **ORM**: Spring Data JPA with Hibernate
-- **Validation**: Jakarta Bean Validation
-- **Security**: Spring Security
-- **Logging**: SLF4J with Logback
-- **Reactive**: Project Reactor with WebFlux
-- **Additional**: Lombok, Spring WebClient
-
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
 - Java 21+
 - Gradle 8.x+
-- PostgreSQL database
+- MongoDB database
 - Git
 
-### Installation
+### Configuration
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/harshitkumar7525/CentsAI-API.git
-   cd centsaiapi
-   ```
+Create environment variables for the application:
 
-2. **Configure environment variables**
-   
-   Create or update `application.properties` in `src/main/resources/`:
-   
-   ```properties
-   spring.application.name=centsaiapi
-   spring.jpa.hibernate.ddl-auto=update
-   spring.jpa.show-sql=true
-   spring.datasource.url=jdbc:postgresql://your-host:5432/your-database?sslmode=require
-   spring.datasource.username=your-username
-   spring.datasource.password=your-password
-   jwt.secret=your-secret-key-min-32-chars
-   jwt.expiration-in-ms=604800000
-   fastapi.url=https://your-ai-service-url/generate
-   frontend.url=https://your-frontend-url
-   ```
+```properties
+SPRING_APPLICATION_NAME=centsaiapi
+MONGO_URI=mongodb+srv://<username>:<password>@<host>/<database>?retryWrites=true&w=majority
+JWT_SECRET=your-secret-key-min-32-chars
+JWT_EXPIRATION=604800000
+MICROSERVICE_URI=https://your-ai-service-url/generate
+FRONTEND_URL=https://your-frontend-url
+PORT=8080
+```
 
-3. **Build the project**
-   ```bash
-   ./gradlew build
-   ```
+The app reads these values from `src/main/resources/application.properties`.
 
-4. **Run the application**
-   ```bash
-   ./gradlew bootRun
-   ```
+### Run the App
 
-The API will be available at `http://localhost:8080`
+```bash
+./gradlew build
+./gradlew bootRun
+```
 
-## 📚 API Endpoints
+The API will be available at `http://localhost:8080` by default.
+
+## API Endpoints
 
 ### Authentication
 
-#### 1. Register User
+#### Register User
 
-**Endpoint**: `POST /api/v1/users/register`
+`POST /api/v1/users/register`
 
-**Description**: Create a new user account
+Request body:
 
-**Request Headers**:
-```
-Content-Type: application/json
-```
-
-**Request Body**:
 ```json
 {
   "email": "user@example.com",
@@ -110,45 +77,33 @@ Content-Type: application/json
 }
 ```
 
-**Request Validation Rules**:
-- `email`: Must be a valid email format and not blank
-- `username`: Cannot be blank
-- `password`: Minimum 6 characters, cannot be blank
+Validation rules:
 
-**Response** (201 Created):
+- `email` must be present and valid
+- `username` must not be blank
+- `password` must not be blank and must be at least 6 characters
+
+Response: `201 Created`
+
 ```json
 {
-  "user_id": 1,
+  "user_id": "67d1c2f4a1b2c3d4e5f67890",
   "username": "john_doe",
   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 }
 ```
 
-**Error Response** (400 Bad Request):
-```json
-{
-  "message": "Validation error",
-  "details": {
-    "email": "Email is required",
-    "password": "Password must be at least 6 characters"
-  }
-}
-```
+Common errors:
 
----
+- `400 Bad Request` for validation failures
+- `409 Conflict` when the email already exists
 
-#### 2. Login User
+#### Login User
 
-**Endpoint**: `POST /api/v1/users/login`
+`POST /api/v1/users/login`
 
-**Description**: Authenticate and obtain JWT token
+Request body:
 
-**Request Headers**:
-```
-Content-Type: application/json
-```
-
-**Request Body**:
 ```json
 {
   "email": "user@example.com",
@@ -156,67 +111,58 @@ Content-Type: application/json
 }
 ```
 
-**Request Validation Rules**:
-- `email`: Must be a valid email format and not blank
-- `password`: Cannot be blank
+Response: `200 OK`
 
-**Response** (200 OK):
 ```json
 {
-  "user_id": 1,
+  "user_id": "67d1c2f4a1b2c3d4e5f67890",
   "username": "john_doe",
   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 }
 ```
 
-**Error Response** (401 Unauthorized):
-```json
-{
-  "message": "Invalid email or password"
-}
-```
+Common errors:
 
----
+- `400 Bad Request` for validation failures
+- `404 Not Found` for invalid credentials
 
 ### Transactions
 
-#### 3. Add Transaction (Manual)
+All transaction endpoints require `Authorization: Bearer <token>`.
 
-**Endpoint**: `POST /api/v1/users/{userId}/transaction`
+#### Add Transaction Manually
 
-**Description**: Create a new expense transaction manually
+`POST /api/v1/users/{userId}/transaction`
 
-**Path Parameters**:
-- `userId` (Long): The ID of the user (must match authenticated user)
+Path parameter:
 
-**Request Headers**:
-```
-Content-Type: application/json
-Authorization: Bearer {token}
-```
+- `userId` is the Mongo user id string and must match the authenticated user
 
-**Request Body**:
+Request body:
+
 ```json
 {
-  "amount": 50.00,
+  "amount": 50.0,
   "category": "Food",
   "date": "2025-12-05"
 }
 ```
 
-**Request Validation Rules**:
-- `amount`: Required, must be a positive number
-- `category`: Required, cannot be blank
-- `date`: Required, must be a valid date
+Notes:
 
-**Response** (201 Created):
+- `amount` must be greater than 0
+- `category` is optional in the current service layer
+- `date` is optional and defaults to today when omitted
+
+Response: `200 OK`
+
 ```json
 {
-  "userId": 1,
+  "userId": "67d1c2f4a1b2c3d4e5f67890",
   "expenses": [
     {
-      "id": 1,
-      "amount": 50.00,
+      "id": "67d1d0e7a1b2c3d4e5f67891",
+      "amount": 50.0,
       "transactionDate": "2025-12-05",
       "category": "Food"
     }
@@ -224,52 +170,33 @@ Authorization: Bearer {token}
 }
 ```
 
-**Error Response** (403 Forbidden):
-```json
-{
-  "message": "User is not authorized to add transaction for this user"
-}
-```
+Common errors:
 
-**Error Response** (401 Unauthorized):
-```json
-{
-  "message": "Unauthorized - Invalid or missing token"
-}
-```
+- `400 Bad Request` when amount is missing or not positive
+- `403 Forbidden` when the path user id does not match the authenticated user
+- `404 Not Found` when the user does not exist
 
----
+#### Add Transaction via AI
 
-#### 4. Add Transaction via AI
+`POST /api/v1/users/ai/{userId}/transaction`
 
-**Endpoint**: `POST /api/v1/users/ai/{userId}/transaction`
+Request body:
 
-**Description**: Create expense transaction using natural language processing
-
-**Path Parameters**:
-- `userId` (Long): The ID of the user (must match authenticated user)
-
-**Request Headers**:
-```
-Content-Type: application/json
-Authorization: Bearer {token}
-```
-
-**Request Body**:
 ```json
 {
   "prompt": "I spent $45 on groceries today"
 }
 ```
 
-**Response** (201 Created):
+Response: `201 Created`
+
 ```json
 {
-  "userId": 1,
+  "userId": "67d1c2f4a1b2c3d4e5f67890",
   "expenses": [
     {
-      "id": 2,
-      "amount": 45.00,
+      "id": "67d1d0e7a1b2c3d4e5f67892",
+      "amount": 45.0,
       "transactionDate": "2025-12-05",
       "category": "Groceries"
     }
@@ -277,504 +204,140 @@ Authorization: Bearer {token}
 }
 ```
 
-**Error Response** (400 Bad Request):
+Common errors:
+
+- `400 Bad Request` when the AI service returns no valid expense data
+- `403 Forbidden` when the path user id does not match the authenticated user
+- `404 Not Found` when the user does not exist
+- `503 Service Unavailable` when the AI microservice fails
+
+#### Get All Transactions
+
+`GET /api/v1/users/{userId}/transactions`
+
+Response: `200 OK`
+
 ```json
 {
-  "message": "Failed to parse transaction from prompt"
-}
-```
-
-**Error Response** (503 Service Unavailable):
-```json
-{
-  "message": "AI service is temporarily unavailable"
-}
-```
-
----
-
-#### 5. Get All Transactions
-
-**Endpoint**: `GET /api/v1/users/{userId}/transactions`
-
-**Description**: Retrieve all transactions for a specific user
-
-**Path Parameters**:
-- `userId` (Long): The ID of the user (must match authenticated user)
-
-**Request Headers**:
-```
-Authorization: Bearer {token}
-```
-
-**Response** (200 OK):
-```json
-{
-  "userId": 1,
+  "userId": "67d1c2f4a1b2c3d4e5f67890",
   "allExpenses": [
     {
-      "id": 1,
-      "amount": 50.00,
+      "id": "67d1d0e7a1b2c3d4e5f67891",
+      "amount": 50.0,
       "transactionDate": "2025-12-05",
       "category": "Food"
-    },
-    {
-      "id": 2,
-      "amount": 100.00,
-      "transactionDate": "2025-12-04",
-      "category": "Transportation"
-    },
-    {
-      "id": 3,
-      "amount": 30.00,
-      "transactionDate": "2025-12-03",
-      "category": "Entertainment"
     }
   ]
 }
 ```
 
-**Error Response** (404 Not Found):
+Common errors:
+
+- `403 Forbidden` when the path user id does not match the authenticated user
+- `404 Not Found` when the user does not exist
+
+#### Update Transaction
+
+`PATCH /api/v1/users/{userId}/transaction/{transactionId}`
+
+Request body:
+
 ```json
 {
-  "message": "User not found"
-}
-```
-
----
-
-#### 6. Update Transaction
-
-**Endpoint**: `PATCH /api/v1/users/{userId}/transaction/{transactionId}`
-
-**Description**: Update an existing transaction
-
-**Path Parameters**:
-- `userId` (Long): The ID of the user (must match authenticated user)
-- `transactionId` (Long): The ID of the transaction to update
-
-**Request Headers**:
-```
-Content-Type: application/json
-Authorization: Bearer {token}
-```
-
-**Request Body**:
-```json
-{
-  "amount": 55.00,
+  "amount": 55.0,
   "category": "Groceries",
   "date": "2025-12-05"
 }
 ```
 
-**Response** (200 OK):
-```json
-{
-  "userId": 1,
-  "expenses": [
-    {
-      "id": 1,
-      "amount": 55.00,
-      "transactionDate": "2025-12-05",
-      "category": "Groceries"
-    }
-  ]
-}
-```
-
-**Error Response** (403 Forbidden):
-```json
-{
-  "message": "User is not authorized to update transaction for this user"
-}
-```
-
-**Error Response** (404 Not Found):
-```json
-{
-  "message": "Transaction not found"
-}
-```
-
----
-
-#### 7. Delete Transaction
-
-**Endpoint**: `DELETE /api/v1/users/{userId}/transaction/{transactionId}`
-
-**Description**: Delete a specific transaction
-
-**Path Parameters**:
-- `userId` (Long): The ID of the user (must match authenticated user)
-- `transactionId` (Long): The ID of the transaction to delete
-
-**Request Headers**:
-```
-Authorization: Bearer {token}
-```
-
-**Response** (204 No Content):
-```
-(Empty body)
-```
-
-**Error Response** (403 Forbidden):
-```json
-{
-  "message": "User is not authorized to delete transaction for this user"
-}
-```
-
-**Error Response** (404 Not Found):
-```json
-{
-  "message": "Transaction not found"
-}
-```
-
----
-
-## 📋 Request/Response Examples
-
-### Complete Flow Example
-
-#### Step 1: Register a new user
-
-```bash
-curl -X POST http://localhost:8080/api/v1/users/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "alice@example.com",
-    "username": "alice_smith",
-    "password": "MySecurePass123"
-  }'
-```
-
-**Response**:
-```json
-{
-  "user_id": 5,
-  "username": "alice_smith",
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1IiwiaWF0IjoxNzAwNjc2ODAwLCJleHAiOjE3MDEyODE2MDB9.abc123def456"
-}
-```
-
----
-
-#### Step 2: Login with existing credentials
-
-```bash
-curl -X POST http://localhost:8080/api/v1/users/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "alice@example.com",
-    "password": "MySecurePass123"
-  }'
-```
-
-**Response**:
-```json
-{
-  "user_id": 5,
-  "username": "alice_smith",
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1IiwiaWF0IjoxNzAwNjc2ODAwLCJleHAiOjE3MDEyODE2MDB9.abc123def456"
-}
-```
-
----
-
-#### Step 3: Add a manual transaction
-
-```bash
-curl -X POST http://localhost:8080/api/v1/users/5/transaction \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1IiwiaWF0IjoxNzAwNjc2ODAwLCJleHAiOjE3MDEyODE2MDB9.abc123def456" \
-  -d '{
-    "amount": 125.50,
-    "category": "Groceries",
-    "date": "2025-12-05"
-  }'
-```
-
-**Response**:
-```json
-{
-  "userId": 5,
-  "expenses": [
-    {
-      "id": 1,
-      "amount": 125.50,
-      "transactionDate": "2025-12-05",
-      "category": "Groceries"
-    }
-  ]
-}
-```
-
----
-
-#### Step 4: Add transaction via AI
-
-```bash
-curl -X POST http://localhost:8080/api/v1/users/5/ai/transaction \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1IiwiaWF0IjoxNzAwNjc2ODAwLCJleHAiOjE3MDEyODE2MDB9.abc123def456" \
-  -d '{
-    "prompt": "I paid $89.99 for a movie ticket and popcorn"
-  }'
-```
-
-**Response**:
-```json
-{
-  "userId": 5,
-  "expenses": [
-    {
-      "id": 2,
-      "amount": 89.99,
-      "transactionDate": "2025-12-05",
-      "category": "Entertainment"
-    }
-  ]
-}
-```
-
----
-
-#### Step 5: Retrieve all transactions
-
-```bash
-curl -X GET http://localhost:8080/api/v1/users/5/transactions \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1IiwiaWF0IjoxNzAwNjc2ODAwLCJleHAiOjE3MDEyODE2MDB9.abc123def456"
-```
-
-**Response**:
-```json
-{
-  "userId": 5,
-  "allExpenses": [
-    {
-      "id": 1,
-      "amount": 125.50,
-      "transactionDate": "2025-12-05",
-      "category": "Groceries"
-    },
-    {
-      "id": 2,
-      "amount": 89.99,
-      "transactionDate": "2025-12-05",
-      "category": "Entertainment"
-    }
-  ]
-}
-```
-
----
-
-#### Step 6: Update a transaction
-
-```bash
-curl -X PATCH http://localhost:8080/api/v1/users/5/transaction/1 \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1IiwiaWF0IjoxNzAwNjc2ODAwLCJleHAiOjE3MDEyODE2MDB9.abc123def456" \
-  -d '{
-    "amount": 130.00,
-    "category": "Groceries",
-    "date": "2025-12-05"
-  }'
-```
-
-**Response**:
-```json
-{
-  "userId": 5,
-  "expenses": [
-    {
-      "id": 1,
-      "amount": 130.00,
-      "transactionDate": "2025-12-05",
-      "category": "Groceries"
-    }
-  ]
-}
-```
-
----
-
-#### Step 7: Delete a transaction
-
-```bash
-curl -X DELETE http://localhost:8080/api/v1/users/5/transaction/1 \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1IiwiaWF0IjoxNzAwNjc2ODAwLCJleHAiOjE3MDEyODE2MDB9.abc123def456"
-```
-
-**Response**: 204 No Content
-
----
-
-## ⚠️ Error Handling
-
-The API returns standardized error responses with appropriate HTTP status codes:
-
-### Common HTTP Status Codes
-
-| Status Code | Description |
-|------------|-------------|
-| 200 | OK - Request successful |
-| 201 | Created - Resource created successfully |
-| 204 | No Content - Request successful, no content to return |
-| 400 | Bad Request - Invalid request parameters |
-| 401 | Unauthorized - Missing or invalid authentication token |
-| 403 | Forbidden - Authenticated user lacks permission |
-| 404 | Not Found - Requested resource not found |
-| 500 | Internal Server Error - Server error occurred |
-| 503 | Service Unavailable - External service unavailable |
-
-### Error Response Format
+Response: `200 OK`
 
 ```json
 {
-  "message": "Error description",
-  "timestamp": "2025-12-05T10:30:00Z",
-  "status": 400
+  "message": "Transaction updated successfully"
 }
 ```
 
----
+Common errors:
 
-## 🔒 Security
+- `403 Forbidden` when the path user id does not match the authenticated user
+- `401 Unauthorized` when the transaction belongs to another user
+- `404 Not Found` when the transaction does not exist
 
-### Authentication
+#### Delete Transaction
 
-- **JWT Tokens**: Used for stateless authentication
-- **Token Expiration**: 7 days (configurable via `jwt.expiration-in-ms`)
-- **Bearer Token**: Include in `Authorization` header as `Bearer {token}`
+`DELETE /api/v1/users/{userId}/transaction/{transactionId}`
 
-### Authorization
+Response: `200 OK`
 
-- **User Isolation**: Users can only access their own data
-- **Path Variable Validation**: User ID in path must match authenticated user
-- **Forbidden Response**: 403 status returned for unauthorized access
-
-### Best Practices
-
-1. **Store tokens securely** in local storage or session storage
-2. **Include token in every request** that requires authentication
-3. **Handle token expiration** and refresh before requests
-4. **Never expose tokens** in version control or logs
-5. **Use HTTPS** in production to encrypt token transmission
-
----
-
-## ⚙️ Configuration
-
-### Environment Variables
-
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `spring.datasource.url` | PostgreSQL connection URL | `jdbc:postgresql://localhost:5432/centsai` |
-| `spring.datasource.username` | Database username | `postgres` |
-| `spring.datasource.password` | Database password | `your-password` |
-| `jwt.secret` | JWT signing secret (min 32 chars) | `your-secret-key-min-32-chars` |
-| `jwt.expiration-in-ms` | Token expiration time in ms | `604800000` (7 days) |
-| `fastapi.url` | AI service URL | `https://your-ai-service.com/generate` |
-| `frontend.url` | Frontend application URL | `https://your-frontend.com` |
-
-### Database Schema
-
-The application automatically creates the following tables:
-
-- **users**: User account information
-- **expenses**: Transaction/expense records
-- **_prisma_migrations**: Migration history (if using Prisma)
-
-### Logging
-
-Logging is configured via SLF4J and Logback. Adjust in `application.properties`:
-
-```properties
-logging.level.root=INFO
-logging.level.in.harshitkumar.centsaiapi=DEBUG
+```json
+{
+  "message": "Transaction deleted successfully"
+}
 ```
 
----
+Common errors:
 
-## 📦 Dependencies
+- `403 Forbidden` when the path user id does not match the authenticated user
+- `401 Unauthorized` when the transaction belongs to another user
+- `404 Not Found` when the transaction does not exist
 
-### Core Dependencies
-- spring-boot-starter-security
-- spring-boot-starter-data-jpa
-- spring-boot-starter-webmvc
-- spring-boot-starter-webflux
-- spring-boot-starter-validation
+## Request and Response Notes
 
-### Authentication
-- jjwt-api, jjwt-impl, jjwt-jackson (JWT)
+Validation errors are returned in this format:
 
-### Database
-- postgresql (PostgreSQL driver)
-
-### Development
-- lombok (Annotation processing)
-- spring-boot-devtools (Hot reload)
-
----
-
-## 🔗 Related Services
-
-- **AI Service**: Gemini-powered expense categorization
-  - URL: `https://centsai-gemini-microservice.onrender.com/generate`
-- **Frontend**: React-based user interface
-  - URL: `https://cents-ai.vercel.app`
-
----
-
-## 📝 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
----
-
-## 👨‍💻 Contributors
-
-- **Harshit Kumar** - Main Developer
-- GitHub: [@harshitkumar7525](https://github.com/harshitkumar7525)
-
----
-
-## 📧 Support
-
-For issues, questions, or suggestions, please create an issue in the GitHub repository or contact the development team.
-
----
-
-## 🗺️ Project Structure
-
-```
-centsaiapi/
-├── src/
-│   ├── main/
-│   │   ├── java/in/harshitkumar/centsaiapi/
-│   │   │   ├── config/           # Security and Spring configurations
-│   │   │   ├── controller/       # REST API endpoints
-│   │   │   ├── dto/              # Data Transfer Objects
-│   │   │   ├── exception/        # Custom exceptions
-│   │   │   ├── models/           # Entity models
-│   │   │   ├── repository/       # Data access layer
-│   │   │   ├── security/         # Security utilities
-│   │   │   ├── service/          # Business logic layer
-│   │   │   └── utils/            # Utility classes
-│   │   └── resources/
-│   │       └── application.properties
-│   └── test/
-│       └── java/...
-├── build.gradle
-├── gradlew
-└── README.md
+```json
+{
+  "message": "Validation failed",
+  "errors": {
+    "email": "Email cannot be blank",
+    "password": "Password must be at least 6 characters"
+  }
+}
 ```
 
----
+The API uses string identifiers for MongoDB documents, so user ids and expense ids are returned as strings rather than numeric values.
 
-**Last Updated**: December 5, 2025
-**Version**: 0.0.1-SNAPSHOT
+## Security
+
+- JWT tokens are used for stateless authentication
+- Include the token in the `Authorization` header as `Bearer <token>`
+- Users can only access resources tied to their own account
+- The backend checks the path user id against the authenticated user before processing protected operations
+
+## MongoDB Schema
+
+The application stores data in these collections:
+
+- `users`
+- `expenses`
+
+## Related Services
+
+- AI microservice: configured through `MICROSERVICE_URI`
+- Frontend application: configured through `FRONTEND_URL`
+
+## Project Structure
+
+```text
+src/
+├── main/
+│   ├── java/in/harshitkumar/centsaiapi/
+│   │   ├── config/
+│   │   ├── controller/
+│   │   ├── dto/
+│   │   ├── exception/
+│   │   ├── models/
+│   │   ├── repository/
+│   │   ├── security/
+│   │   ├── service/
+│   │   └── utils/
+│   └── resources/
+│       └── application.properties
+└── test/
+    └── java/
+```
+
+## License
+
+This project is licensed under the MIT License.

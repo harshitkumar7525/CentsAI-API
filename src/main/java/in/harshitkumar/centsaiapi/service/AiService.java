@@ -32,12 +32,12 @@ public class AiService {
     private final WebClient webClient;
     private final UserRepository userRepository;
     private final ExpenseRepository expensesRepository;
+    private final ObjectMapper mapper;
 
     @Value("${microservice.uri}")
     private String url;
 
     public Object extractData(String prompt) {
-
         log.info("AiService: Sending prompt to AI service");
 
         try {
@@ -58,8 +58,6 @@ public class AiService {
     }
 
     public AiResponse objectToAiResponse(String userId, Object obj) {
-
-        ObjectMapper mapper = new ObjectMapper();
 
         List<ExpenseDto> expenses = mapper.convertValue(
                 obj,
@@ -105,7 +103,7 @@ public class AiService {
                         .amount(dto.getAmount())
                         .category(capitalize(dto.getCategory()))
                         .date(dto.getTransactionDate())
-                        .userId(userId)   // ✅ FIXED
+                        .userId(userId)
                         .build())
                 .toList();
 
